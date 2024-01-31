@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import {NestedTreeControl} from '@angular/cdk/tree';
@@ -8,6 +8,8 @@ import {MatButtonModule} from '@angular/material/button';
 import { CitizenService } from './services/citizen.service';
 import { CityService } from './services/city.service';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+import {MatTooltipModule, TooltipComponent, TooltipPosition} from '@angular/material/tooltip';
+import { switchMap } from 'rxjs';
 
 interface CitizenNode {
   name: string;
@@ -18,24 +20,28 @@ interface CitizenNode {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, MatTreeModule, MatButtonModule, MatIconModule],
+  imports: [CommonModule, RouterOutlet, MatTreeModule, MatButtonModule, MatIconModule, MatTooltipModule],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.css'
+  styleUrl: './app.component.css',
+  encapsulation: ViewEncapsulation.None
 })
 export class AppComponent {
+  tooltipPosition: TooltipPosition = "right";
   treeControl = new NestedTreeControl<CitizenNode>(node => node.children);
   dataSource = new MatTreeNestedDataSource<CitizenNode>();
+
+  citizens: any[] = [];
+  cities: any[] = []
 
   constructor(
     private citiesService: CityService,
     private citizensService: CitizenService) {
-
-    this.citiesService.getAll().subscribe((val) => {
-      console.log(val);
-    })
-
-    this.citizensService.getAll().subscribe((val) => {
-      this.dataSource.data = this.convertJsonFromServerToTreeComponentFormat(val, ['city', 'district', 'street']);
+    this.citizensService.getAll().pipe(switchMap((val) => {
+      this.citizens = val;
+      return this.citiesService.getAll();
+    })).subscribe((val) => {
+      this.cities = val;
+      this.dataSource.data = this.convertJsonFromServerToTreeComponentFormat(this.citizens, ['city', 'district', 'street']);
     })
   }
 
@@ -49,8 +55,11 @@ export class AppComponent {
 
     inputJson.forEach(person => {
       // Find a value(object) of included group, like city, district, street in current person
-      for (let groupName of includeGroupTypes) 
+      for (let groupName of includeGroupTypes) {
         currentGroups[groupName] = person.groups.find((group: any) => group.type === groupName);
+        // if (groupName === 'city') 
+        //   person.cityInfo = `${currentGroups[groupName].name}, ${currentGroups[groupName].data} жителей`;
+      }
       
       for (let groupName of includeGroupTypes) {
         // Текущая группа, например "city": {...}
@@ -65,19 +74,17 @@ export class AppComponent {
           node = previousGroup.children.find((node: any) => node.name === currentGroup.name && node.type === groupName);
 
         if (!node) {
-          node = {
-            name: currentGroup.name,
-            type: groupName,
-            children: []
-          }
-          if (isPreviousGroupExists)
-            previousGroup.children.push(node);
-          else
-            result.push(node);
+          node = { name: currentGroup.name, type: groupName, children: [] }
+
+          if (isPreviousGroupExists) previousGroup.children.push(node);
+          else result.push(node);
         }
         // if last groupName add person
-        if (groupName === includeGroupTypes[includeGroupTypes.length - 1])
-          node.children.push({ name: person.name });
+        if (groupName === includeGroupTypes[includeGroupTypes.length - 1]) {
+          let cityNameOfPerson = currentGroups['city'].name.split(' ')[0];
+          let cityInfo = this.cities.find((city) => city.name === cityNameOfPerson);
+          node.children.push({ name: person.name, cityInfo: `${cityInfo.name}, ${cityInfo.data} жителей`});
+        }
         previousGroup = node;
       }
       previousGroup = null;
