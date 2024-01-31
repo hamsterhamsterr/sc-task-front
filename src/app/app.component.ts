@@ -9,50 +9,56 @@ import { CitizenService } from './services/citizen.service';
 import { CityService } from './services/city.service';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 
-interface FoodNode {
+// interface FoodNode {
+//   name: string;
+//   children?: FoodNode[];
+// }
+
+interface CitizenNode {
   name: string;
-  children?: FoodNode[];
+  type: String
+  children?: CitizenNode[];
 }
 
-const TREE_DATA: FoodNode[] = [
-  {
-    name: 'Russua',
-    children: [
-      {
-        name: 'Fruit',
-        children: [{name: 'Apple'}, {name: 'Banana'}, {name: 'Fruit loops'}],
-      },
+// const TREE_DATA: FoodNode[] = [
+//   {
+//     name: 'Russua',
+//     children: [
+//       {
+//         name: 'Fruit',
+//         children: [{name: 'Apple'}, {name: 'Banana'}, {name: 'Fruit loops'}],
+//       },
       
-  {
-    name: 'Vegetables',
-    children: [
-      {
-        name: 'Green',
-        children: [{name: 'Broccoli'}, {name: 'Brussels sprouts'}],
-      },
-      {
-        name: 'Orange',
-        children: [{name: 'Pumpkins'}, {name: 'Carrots'}],
-      },
-    ],
-  },
-    ]
-  },
+//   {
+//     name: 'Vegetables',
+//     children: [
+//       {
+//         name: 'Green',
+//         children: [{name: 'Broccoli'}, {name: 'Brussels sprouts'}],
+//       },
+//       {
+//         name: 'Orange',
+//         children: [{name: 'Pumpkins'}, {name: 'Carrots'}],
+//       },
+//     ],
+//   },
+//     ]
+//   },
 
-  {
-    name: 'Vegetables',
-    children: [
-      {
-        name: 'Green',
-        children: [{name: 'Broccoli'}, {name: 'Brussels sprouts'}],
-      },
-      {
-        name: 'Orange',
-        children: [{name: 'Pumpkins'}, {name: 'Carrots'}],
-      },
-    ],
-  },
-];
+//   {
+//     name: 'Vegetables',
+//     children: [
+//       {
+//         name: 'Green',
+//         children: [{name: 'Broccoli'}, {name: 'Brussels sprouts'}],
+//       },
+//       {
+//         name: 'Orange',
+//         children: [{name: 'Pumpkins'}, {name: 'Carrots'}],
+//       },
+//     ],
+//   },
+// ];
 
 @Component({
   selector: 'app-root',
@@ -62,25 +68,26 @@ const TREE_DATA: FoodNode[] = [
   styleUrl: './app.component.css'
 })
 export class AppComponent {
-  treeControl = new NestedTreeControl<FoodNode>(node => node.children);
-  dataSource = new MatTreeNestedDataSource<FoodNode>();
+  treeControl = new NestedTreeControl<CitizenNode>(node => node.children);
+  dataSource = new MatTreeNestedDataSource<CitizenNode>();
 
   constructor(
     private citiesService: CityService,
     private citizensService: CitizenService) {
 
-    this.dataSource.data = TREE_DATA;
+    // this.dataSource.data = TREE_DATA;
 
     this.citiesService.getAll().subscribe((val) => {
       console.log(val);
     })
 
     this.citizensService.getAll().subscribe((val) => {
-      console.log(this.convertJsonFromServerToTreeComponentFormat(val));
+      // console.log(this.convertJsonFromServerToTreeComponentFormat(val));
+      this.dataSource.data = this.convertJsonFromServerToTreeComponentFormat(val);
     })
   }
 
-  hasChild = (_: number, node: FoodNode) => !!node.children && node.children.length > 0;
+  hasChild = (_: number, node: CitizenNode) => !!node.children && node.children.length > 0;
 
   convertJsonFromServerToTreeComponentFormat(inputJson: any[]): any[] {
     const result: any[] = [];
