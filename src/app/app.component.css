@@ -24,3 +24,11 @@
   .example-tree div[role=group] > .mat-tree-node {
     padding-left: 40px;
   }
+
+  .tooltipCity .mdc-tooltip__surface {
+    min-width: 280px;
+  }
+
+  .person-node {
+    cursor: pointer;
+  }
