@@ -83,7 +83,8 @@ export class AppComponent {
 
     this.citizensService.getAll().subscribe((val) => {
       // console.log(this.convertJsonFromServerToTreeComponentFormat(val));
-      this.dataSource.data = this.convertJsonFromServerToTreeComponentFormat(val);
+      // this.dataSource.data = this.convertJsonFromServerToTreeComponentFormat(val);
+      this.dataSource.data = this.convertJsonFromServerToTreeComponentFormatWithInclude(val, ['city', 'district', 'street']);
     })
   }
 
@@ -133,6 +134,55 @@ export class AppComponent {
       streetNode.children.push({ name: person.name });
     })
 
+    return result;
+  }
+
+  convertJsonFromServerToTreeComponentFormatWithInclude(inputJson: any[], includeGroupTypes: string[]): any[] {
+    const result: any[] = [];
+    // Текущии значения groups для жителя в виде {"city": {...}, "district": {...}, ...}
+    const currentGroups: any = {};
+    
+    let previousGroup: any = null;
+
+    inputJson.forEach(person => {
+      // Find a value(object) of included group, like city, district, street in current person
+      for (let groupName of includeGroupTypes) {
+        currentGroups[groupName] = person.groups.find((group: any) => group.type === groupName);
+      }
+
+      for (let groupName of includeGroupTypes) {
+        // Текущая группа, например "city": {...}
+        let currentGroup = currentGroups[groupName];
+        // Если это вершина иерархии
+        let node = null;
+        let isPreviousGroupExists = previousGroup ? true : false;
+
+        if (!isPreviousGroupExists)
+          node = result.find(node => node.name === currentGroup.name && node.type === groupName);
+        else
+          node = previousGroup.children.find((node: any) => node.name === currentGroup.name && node.type === groupName);
+
+        if (!node) {
+          node = {
+            name: currentGroup.name,
+            type: groupName,
+            children: []
+          }
+          if (isPreviousGroupExists)
+            previousGroup.children.push(node);
+          else
+            result.push(node);
+        }
+
+        // if last groupName add person
+        if (groupName === includeGroupTypes[includeGroupTypes.length - 1])
+          node.children.push({ name: person.name });
+
+        previousGroup = node;
+      }
+      previousGroup = null;
+    })
+    console.log(result)
     return result;
   }
 }
