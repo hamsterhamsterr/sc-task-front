@@ -49,22 +49,16 @@ export class AppComponent {
 
   convertJsonFromServerToTreeComponentFormat(inputJson: any[], includeGroupTypes: string[]): any[] {
     const result: any[] = [];
-    // Текущии значения groups для жителя в виде {"city": {...}, "district": {...}, ...}
     const currentGroups: any = {};
     let previousGroup: any = null;
 
     inputJson.forEach(person => {
-      // Find a value(object) of included group, like city, district, street in current person
       for (let groupName of includeGroupTypes) {
         currentGroups[groupName] = person.groups.find((group: any) => group.type === groupName);
-        // if (groupName === 'city') 
-        //   person.cityInfo = `${currentGroups[groupName].name}, ${currentGroups[groupName].data} жителей`;
       }
       
       for (let groupName of includeGroupTypes) {
-        // Текущая группа, например "city": {...}
         let currentGroup = currentGroups[groupName];
-        // Если это вершина иерархии
         let node = null;
         let isPreviousGroupExists = previousGroup ? true : false;
 
@@ -79,7 +73,6 @@ export class AppComponent {
           if (isPreviousGroupExists) previousGroup.children.push(node);
           else result.push(node);
         }
-        // if last groupName add person
         if (groupName === includeGroupTypes[includeGroupTypes.length - 1]) {
           let cityNameOfPerson = currentGroups['city'].name.split(' ')[0];
           let cityInfo = this.cities.find((city) => city.name === cityNameOfPerson);
